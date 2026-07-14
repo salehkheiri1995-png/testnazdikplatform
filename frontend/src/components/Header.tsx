@@ -1,17 +1,15 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import type { RootState } from '../store';
-import { logout } from '../store/authSlice';
+import { useAuthStore } from '../store/authStore';
+import { useCartStore } from '../store/cartStore';
 import './Header.css';
 
 export default function Header() {
-  const { isAuthenticated, user } = useSelector((state: RootState) => state.auth);
-  const cartItems = useSelector((state: RootState) => state.cart?.items || []);
-  const dispatch = useDispatch();
+  const { isAuthenticated, user, logout } = useAuthStore();
+  const items = useCartStore((s) => s.items);
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    dispatch(logout());
+    logout();
     navigate('/');
   };
 
@@ -29,7 +27,8 @@ export default function Header() {
 
         <div className="header-actions">
           <Link to="/cart" className="cart-btn">
-            🛒 {cartItems.length > 0 && <span className="cart-badge">{cartItems.length}</span>}
+            🛒
+            {items.length > 0 && <span className="cart-badge">{items.length}</span>}
           </Link>
 
           {isAuthenticated ? (

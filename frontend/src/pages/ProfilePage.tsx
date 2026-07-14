@@ -1,10 +1,9 @@
-import { useSelector } from 'react-redux';
 import { Link } from 'react-router-dom';
-import type { RootState } from '../store';
+import { useAuthStore } from '../store/authStore';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { user, isAuthenticated } = useAuthStore();
 
   if (!isAuthenticated || !user) {
     return (
