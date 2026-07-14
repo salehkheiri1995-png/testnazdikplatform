@@ -1,0 +1,36 @@
+.stores-page {
+  width: 100%;
+}
+
+.store-card {
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.store-image {
+  font-size: 4rem;
+  flex-shrink: 0;
+}
+
+.store-info {
+  flex: 1;
+}
+
+.store-info h3 {
+  margin-bottom: 0.5rem;
+  color: var(--primary-color);
+  font-size: 1.3rem;
+}
+
+.category {
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+.rating {
+  font-weight: 600;
+  color: var(--secondary-color);
+}
