@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* RTL font — IranSans یا Vazir در production جایگزین می‌شود */
+body {
+  font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+  direction: rtl;
+}

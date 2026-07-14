@@ -1,0 +1,1 @@
+"""Nazdik Backend Application Package."""
