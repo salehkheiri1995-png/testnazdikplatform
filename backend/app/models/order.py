@@ -1,9 +1,10 @@
 """مدل سفارش (Order)."""
 
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -14,6 +15,24 @@ if TYPE_CHECKING:
     from app.models.review import Review
     from app.models.service import Service
     from app.models.user import User
+
+
+class OrderType(str, Enum):
+    """نوع سفارش."""
+
+    SERVICE = "service"
+    PRODUCT = "product"
+
+
+class OrderStatus(str, Enum):
+    """وضعیت سفارش."""
+
+    PENDING = "pending"        # در انتظار تأیید
+    CONFIRMED = "confirmed"    # تأیید شده
+    IN_PROGRESS = "in_progress"  # در حال انجام
+    COMPLETED = "completed"    # تکمیل شده
+    CANCELLED = "cancelled"    # لغو شده
+    REFUNDED = "refunded"      # بازگشت وجه
 
 
 class Order(Base, TimestampMixin):
@@ -41,7 +60,7 @@ class Order(Base, TimestampMixin):
         Integer, ForeignKey("stores.id"), nullable=True, index=True
     )
     status: Mapped[str] = mapped_column(
-        String(20), nullable=False, default="pending", index=True
+        String(20), nullable=False, default=OrderStatus.PENDING.value, index=True
     )
     scheduled_date: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True
