@@ -1,10 +1,9 @@
 """مدل نظر و امتیازدهی (Review)."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -22,13 +21,9 @@ class Review(Base, TimestampMixin):
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    
-    # نویسنده
     user_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    
-    # نظر برای کدام مورد
     provider_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("providers.id", ondelete="CASCADE"), nullable=True, index=True
     )
@@ -38,46 +33,16 @@ class Review(Base, TimestampMixin):
     order_id: Mapped[Optional[int]] = mapped_column(
         Integer, ForeignKey("orders.id", ondelete="SET NULL"), nullable=True, index=True
     )
-    
-    # امتیاز (1-5)
-    rating: Mapped[int] = mapped_column(
-        Integer, nullable=False, comment="امتیاز 1 تا 5"
-    )
-    
-    # متن نظر
-    title: Mapped[Optional[str]] = mapped_column(
-        String(200), nullable=True, comment="عنوان نظر"
-    )
-    comment: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, comment="متن نظر"
-    )
-    
-    # تصاویر
-    images: Mapped[Optional[list[str]]] = mapped_column(
-        ARRAY(String), nullable=True, comment="تصاویر ضمیمه"
-    )
-    
-    # وضعیت
-    is_verified: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, comment="تأیید شده (خرید واقعی)"
-    )
-    is_approved: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False, comment="تأیید شده توسط ادمین"
-    )
-    
-    # آمار
-    helpful_count: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, comment="تعداد 'مفید' از کاربران"
-    )
-    
-    # پاسخ ارائه‌دهنده/فروشنده
-    reply_text: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, comment="پاسخ ارائه‌دهنده"
-    )
-    replied_at: Mapped[Optional[datetime]] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    comment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    images: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    is_approved: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    helpful_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    reply_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    replied_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
     # Relations
     user: Mapped["User"] = relationship("User", back_populates="reviews")
     provider: Mapped[Optional["Provider"]] = relationship(

@@ -1,16 +1,9 @@
 """مدل خدمات (Service) ارائه‌شده توسط Providerها."""
 
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-try:
-    from sqlalchemy.dialects.postgresql import JSONB as JSON_TYPE, ARRAY
-    _use_pg = True
-except ImportError:
-    from sqlalchemy import JSON as JSON_TYPE
-    _use_pg = False
 
 from app.models.base import Base, TimestampMixin
 
@@ -39,9 +32,9 @@ class Service(Base, TimestampMixin):
     price_range_min: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     price_range_max: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     duration_minutes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    images: Mapped[Optional[Any]] = mapped_column(JSON_TYPE, nullable=True)
-    features: Mapped[Optional[Any]] = mapped_column(JSON_TYPE, nullable=True)
-    requirements: Mapped[Optional[Any]] = mapped_column(JSON_TYPE, nullable=True)
+    images: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    features: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    requirements: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     view_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     order_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
