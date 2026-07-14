@@ -125,8 +125,8 @@ class Order(Base, TimestampMixin):
         Text, nullable=True, comment="یادداشت ادمین"
     )
     
-    # متادیتا
-    metadata: Mapped[Optional[dict]] = mapped_column(
+    # داده‌های اضافی (تغییر نام از metadata به extra_data)
+    extra_data: Mapped[Optional[dict]] = mapped_column(
         JSONB, nullable=True, comment="اطلاعات اضافی"
     )
     
