@@ -1,24 +1,20 @@
-"""Initial migration — مرحله ۱: مدل‌های مشترک
+"""Initial migration - stage 1: shared models
 
 Revision ID: 001_initial
-Revises: 
+Revises:
 Create Date: 2024-12-01 00:00:00
 
-شامل جداول:
+Tables included:
+- cities
+- neighborhoods
 - users
 - saved_addresses
 - categories
-- cities
-- neighborhoods
-- payments (فقط ساختار — بدون FK به bookings/orders که در مراحل بعد می‌آیند)
-- favorites
-- reviews (فقط ساختار)
 - notifications
 - reports
 """
 from typing import Sequence, Union
 
-import geoalchemy2
 import sqlalchemy as sa
 from alembic import op
 from sqlalchemy.dialects import postgresql
@@ -30,15 +26,10 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    """ایجاد تمام جداول مرحله ۱."""
-
-    # فعال‌سازی extension های PostgreSQL
-    op.execute("CREATE EXTENSION IF NOT EXISTS postgis;")
-    op.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
-    op.execute('CREATE EXTENSION IF NOT EXISTS "uuid-ossp";')
+    """Create all stage 1 tables."""
 
     # ------------------------------------------------------------------
-    # جدول cities
+    # cities table
     # ------------------------------------------------------------------
     op.create_table(
         "cities",
@@ -58,7 +49,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_cities_slug"), "cities", ["slug"])
 
     # ------------------------------------------------------------------
-    # جدول neighborhoods
+    # neighborhoods table
     # ------------------------------------------------------------------
     op.create_table(
         "neighborhoods",
@@ -79,9 +70,9 @@ def upgrade() -> None:
     op.create_index(op.f("ix_neighborhoods_city_id"), "neighborhoods", ["city_id"])
 
     # ------------------------------------------------------------------
-    # جدول users
-    # نکته: نقش کاربر از وجود رکورد ServiceProvider یا Store تشخیص داده می‌شود
-    # نه از یک Enum ثابت — این طراحی از Hybrid User به‌طور طبیعی پشتیبانی می‌کند
+    # users table
+    # note: user role is derived from ServiceProvider/Store record existence,
+    # not from a fixed Enum - this naturally supports Hybrid users
     # ------------------------------------------------------------------
     op.create_table(
         "users",
@@ -111,7 +102,7 @@ def upgrade() -> None:
     op.create_index(op.f("ix_users_phone"), "users", ["phone"])
 
     # ------------------------------------------------------------------
-    # جدول saved_addresses
+    # saved_addresses table
     # ------------------------------------------------------------------
     op.create_table(
         "saved_addresses",
@@ -138,12 +129,14 @@ def upgrade() -> None:
     )
 
     # ------------------------------------------------------------------
-    # جدول categories
+    # categories table
+    # Using postgresql.ENUM (not sa.Enum) for the column type ensures
+    # SQLAlchemy creates the Postgres type exactly once, tied to this
+    # table's creation - avoids "type already exists" errors.
     # ------------------------------------------------------------------
     category_type_enum = postgresql.ENUM(
-        "service", "product", "both", name="category_type_enum", create_type=True
+        "service", "product", "both", name="category_type_enum"
     )
-    category_type_enum.create(op.get_bind())
 
     op.create_table(
         "categories",
@@ -151,7 +144,7 @@ def upgrade() -> None:
         sa.Column("name", sa.String(length=100), nullable=False),
         sa.Column("slug", sa.String(length=100), nullable=False),
         sa.Column("parent_id", sa.Integer(), nullable=True),
-        sa.Column("type", sa.Enum("service", "product", "both", name="category_type_enum"), nullable=False),
+        sa.Column("type", category_type_enum, nullable=False),
         sa.Column("icon", sa.String(length=200), nullable=True),
         sa.Column(
             "created_at",
@@ -164,13 +157,13 @@ def upgrade() -> None:
         sa.UniqueConstraint("slug"),
     )
     op.create_index(op.f("ix_categories_slug"), "categories", ["slug"])
-    # ایندکس GIN trigram برای جستجوی فارسی autocomplete
+    # GIN trigram index for Persian autocomplete search
     op.execute(
         "CREATE INDEX ix_categories_name_trgm ON categories USING GIN (name gin_trgm_ops);"
     )
 
     # ------------------------------------------------------------------
-    # جدول notifications
+    # notifications table
     # ------------------------------------------------------------------
     op.create_table(
         "notifications",
@@ -203,7 +196,7 @@ def upgrade() -> None:
     )
 
     # ------------------------------------------------------------------
-    # جدول reports
+    # reports table
     # ------------------------------------------------------------------
     op.create_table(
         "reports",
@@ -231,7 +224,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    """حذف تمام جداول مرحله ۱."""
+    """Drop all stage 1 tables."""
     op.drop_table("reports")
     op.drop_table("notifications")
     op.execute("DROP INDEX IF EXISTS ix_categories_name_trgm;")
@@ -241,6 +234,3 @@ def downgrade() -> None:
     op.drop_table("users")
     op.drop_table("neighborhoods")
     op.drop_table("cities")
-    op.execute('DROP EXTENSION IF EXISTS "uuid-ossp";')
-    op.execute("DROP EXTENSION IF EXISTS pg_trgm;")
-    op.execute("DROP EXTENSION IF EXISTS postgis;")
