@@ -1,72 +1,69 @@
-"""Alembic environment configuration.
-
-This file configures how migrations are executed.
-DATABASE_URL is read from the .env file to avoid hardcoding.
 """
+Alembic environment configuration.
+
+تنظیمات برای autogenerate مهاجرت‌ها.
+"""
+
 import asyncio
-import os
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# load environment variables from .env
-from dotenv import load_dotenv
+from alembic import context
 
-load_dotenv()
+# Import Base و تمام مدل‌ها برای autogenerate
+from app.core.config import settings
+from app.models import Base  # این همه مدل‌ها را import می‌کند
 
-# this import makes Alembic aware of all models
-from app.models.base import Base  # noqa: E402
-import app.models  # noqa: E402, F401 - side-effect: registers all models in metadata
-
+# Alembic Config object
 config = context.config
 
-# configure logger from alembic.ini
+# استفاده از DATABASE_URL از settings
+config.set_main_option("sqlalchemy.url", settings.database_url)
+
+# Setup logging
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# metadata for autogenerate
+# Target metadata برای autogenerate
 target_metadata = Base.metadata
-
-# read DATABASE_URL from env - keep asyncpg driver as-is
-db_url = os.environ.get("DATABASE_URL", "")
-config.set_main_option("sqlalchemy.url", db_url)
 
 
 def run_migrations_offline() -> None:
-    """Run migrations in offline mode (no real DB connection)."""
+    """
+    Run migrations in 'offline' mode.
+
+    در این حالت مستقیماً SQL تولید می‌شود بدون اتصال به دیتابیس.
+    """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        compare_type=True,
-        compare_server_default=True,
     )
 
     with context.begin_transaction():
         context.run_migrations()
 
 
-def do_run_migrations(connection):
-    """Run migrations synchronously on the given connection."""
-    context.configure(
-        connection=connection,
-        target_metadata=target_metadata,
-        compare_type=True,
-        compare_server_default=True,
-    )
+def do_run_migrations(connection: Connection) -> None:
+    """اجرای مهاجرت‌ها."""
+    context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
 
 
 async def run_async_migrations() -> None:
-    """Run migrations using an async engine."""
+    """اجرای async مهاجرت‌ها."""
+    configuration = config.get_section(config.config_ini_section, {})
+    configuration["sqlalchemy.url"] = settings.database_url
+
     connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
@@ -78,7 +75,11 @@ async def run_async_migrations() -> None:
 
 
 def run_migrations_online() -> None:
-    """Run migrations in online mode."""
+    """
+    Run migrations in 'online' mode.
+
+    اتصال به دیتابیس و اجرای مهاجرت‌ها.
+    """
     asyncio.run(run_async_migrations())
 
 
