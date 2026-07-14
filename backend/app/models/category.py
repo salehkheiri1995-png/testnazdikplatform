@@ -2,17 +2,6 @@
 
 درخت دسته‌بندی با self-referential FK پیاده‌سازی شده.
 نوع دسته‌بندی (service/product/both) مشخص می‌کند در کجا نمایش داده شود.
-
-مثال سلسله‌مراتب:
-  خدمات خانگی (service)
-  ├── نظافت (service)
-  │   ├── نظافت منزل
-  │   └── نظافت صنعتی
-  └── تعمیرات (service)
-
-  فروشگاه (product)
-  ├── مواد غذایی (product)
-  └── پوشاک (product)
 """
 
 from __future__ import annotations
@@ -27,7 +16,8 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
-    pass
+    from app.models.product import Product
+    from app.models.service import Service
 
 
 class CategoryType(str, enum.Enum):
@@ -79,7 +69,7 @@ class Category(BaseModel):
         comment="نام آیکون (مثال: wrench) یا URL SVG",
     )
 
-    # ── Relationships ─────────────────────────────────────────────────
+    # ── Relationships ─────────────────────────────────────
     parent: Mapped[Category | None] = relationship(
         "Category",
         remote_side="Category.id",  # self-referential
@@ -90,6 +80,16 @@ class Category(BaseModel):
         "Category",
         back_populates="parent",
         lazy="select",
+    )
+    
+    # خدمات و محصولات
+    services: Mapped[list[Service]] = relationship(
+        "Service",
+        back_populates="category",
+    )
+    products: Mapped[list[Product]] = relationship(
+        "Product",
+        back_populates="category",
     )
 
     def __repr__(self) -> str:

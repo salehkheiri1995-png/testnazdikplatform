@@ -12,8 +12,8 @@ geoalchemy2==0.17.1
 pydantic==2.10.3
 pydantic-settings==2.6.1
 
-# احراز هویت
-python-jose[cryptography]==3.3.0
+# احراز هویت و رمزنگاری
+PyJWT==2.8.0
 passlib[bcrypt]==1.7.4
 
 # Redis و Celery

@@ -3,15 +3,10 @@
 طراحی نقش‌ها:
   به‌جای Enum ثابت برای نقش، نقش از وجود رکورد مرتبط تشخیص داده می‌شود:
   - کاربر عادی (Client): هر User پایه
-  - ارائه‌دهنده خدمات: User با رکورد ServiceProvider
+  - ارائه‌دهنده خدمات: User با رکورد Provider
   - فروشنده: User با رکورد Store
-  - Hybrid: User که هم ServiceProvider هم Store دارد
+  - Hybrid: User که هم Provider هم Store دارد
   - ادمین: فیلد بولی is_admin (جدا از سایر نقش‌ها)
-
-  این طراحی:
-  1. از کاربر ترکیبی (Hybrid) به‌طور طبیعی پشتیبانی می‌کند
-  2. نیاز به migration برای افزودن نقش جدید را حذف می‌کند
-  3. RBAC ساده‌تر و انعطاف‌پذیرتر است
 """
 
 from __future__ import annotations
@@ -24,9 +19,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import BaseModel
 
 if TYPE_CHECKING:
-    # فقط برای type hint — از circular import جلوگیری می‌کند
-    from app.models.saved_address import SavedAddress
+    from app.models.favorite import Favorite
+    from app.models.message import Message
     from app.models.notification import Notification
+    from app.models.order import Order
+    from app.models.payment import Payment
+    from app.models.provider import Provider
+    from app.models.review import Review
+    from app.models.saved_address import SavedAddress
+    from app.models.store import Store
 
 
 class User(BaseModel):
@@ -76,8 +77,7 @@ class User(BaseModel):
         comment="مسیر نسبی تصویر پروفایل — serve از Nginx",
     )
 
-    # ── Relationships ─────────────────────────────────────────────────
-    # lazy="select" پیش‌فرض — در اکثر مواقع نیازی به load همه آدرس‌ها نداریم
+    # ── Relationships ─────────────────────────────────────
     saved_addresses: Mapped[list[SavedAddress]] = relationship(
         "SavedAddress",
         back_populates="user",
@@ -90,18 +90,69 @@ class User(BaseModel):
         cascade="all, delete-orphan",
         lazy="select",
     )
+    
+    # نقش‌ها
+    provider: Mapped[Provider | None] = relationship(
+        "Provider",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    store: Mapped[Store | None] = relationship(
+        "Store",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+    
+    # سفارشات و پرداخت‌ها
+    orders: Mapped[list[Order]] = relationship(
+        "Order",
+        foreign_keys="Order.customer_id",
+        back_populates="customer",
+        cascade="all, delete-orphan",
+    )
+    payments: Mapped[list[Payment]] = relationship(
+        "Payment",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    
+    # نظرات
+    reviews: Mapped[list[Review]] = relationship(
+        "Review",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+    
+    # پیام‌ها
+    sent_messages: Mapped[list[Message]] = relationship(
+        "Message",
+        foreign_keys="Message.sender_id",
+        back_populates="sender",
+        cascade="all, delete-orphan",
+    )
+    received_messages: Mapped[list[Message]] = relationship(
+        "Message",
+        foreign_keys="Message.receiver_id",
+        back_populates="receiver",
+        cascade="all, delete-orphan",
+    )
+    
+    # علاقه‌مندی‌ها
+    favorites: Mapped[list[Favorite]] = relationship(
+        "Favorite",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:
         return f"<User id={self.id} phone={self.phone}>"
 
     @property
     def is_service_provider(self) -> bool:
-        """آیا این کاربر ارائه‌دهنده خدمات است.
-
-        بررسی از روی وجود رکورد ServiceProvider — نه Enum.
-        توجه: برای دقت بالا باید با joinedload بارگذاری شود.
-        """
-        return hasattr(self, "service_provider") and self.service_provider is not None
+        """آیا این کاربر ارائه‌دهنده خدمات است."""
+        return hasattr(self, "provider") and self.provider is not None
 
     @property
     def is_store_owner(self) -> bool:
