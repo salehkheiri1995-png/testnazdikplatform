@@ -1,59 +1,57 @@
-"""مدل City — شهرها.
-
-داده‌های شهرها به‌صورت seed در دیتابیس وارد می‌شوند.
-کاربران هنگام ثبت‌نام و جستجو شهر خود را انتخاب می‌کنند.
-"""
+"""مدل City — شهرهای ایران."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import String, UniqueConstraint
+from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import Base
-import datetime
-from sqlalchemy import DateTime, func
+from app.models.base import BaseModel
 
 if TYPE_CHECKING:
     from app.models.neighborhood import Neighborhood
+    from app.models.provider import Provider
+    from app.models.store import Store
 
 
-class City(Base):
-    """شهر.
+class City(BaseModel):
+    """مدل شهر.
 
     Attributes:
         name: نام فارسی شهر
-        slug: شناسه URL-friendly
-        province: نام استان
+        slug: شناسه URL-friendly (یکتا)
     """
 
     __tablename__ = "cities"
-    __table_args__ = (
-        UniqueConstraint("slug", name="uq_cities_slug"),
-    )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    name: Mapped[str] = mapped_column(String(100), nullable=False)
-    slug: Mapped[str] = mapped_column(
-        String(100), unique=True, index=True, nullable=False
-    )
-    province: Mapped[str] = mapped_column(
+    name: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
-        comment="نام استان — برای فیلتر جغرافیایی",
+        index=True,
+        comment="نام فارسی شهر — مثال: تهران",
     )
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
+    slug: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        index=True,
         nullable=False,
+        comment="شناسه URL — مثال: tehran",
     )
 
-    # ── Relationships ─────────────────────────────────────────────────
+    # ── Relationships ─────────────────────────────────────
     neighborhoods: Mapped[list[Neighborhood]] = relationship(
         "Neighborhood",
         back_populates="city",
         cascade="all, delete-orphan",
+    )
+    providers: Mapped[list[Provider]] = relationship(
+        "Provider",
+        back_populates="city",
+    )
+    stores: Mapped[list[Store]] = relationship(
+        "Store",
+        back_populates="city",
     )
 
     def __repr__(self) -> str:
