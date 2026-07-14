@@ -1,55 +1,83 @@
 import { Link } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
-import { formatPrice } from '../utils/helpers';
+import './CartPage.css';
 
-const CartPage = () => {
+export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, getTotalPrice } = useCartStore();
 
   if (items.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-        <div style={{ fontSize: '4rem' }}>🛒</div>
-        <h2>سبد خرید خالی است</h2>
-        <p style={{ color: '#666', marginBottom: '2rem' }}>محصولات یا خدمات مورد نظرتان را اضافه کنید</p>
-        <Link to="/" className="btn btn-primary">بازگشت به خانه</Link>
+      <div className="cart-page" dir="rtl">
+        <div className="empty-cart">
+          <span>🛒</span>
+          <h2>سبد خرید شما خالی است</h2>
+          <p>محصولات مورد نظر خود را از فروشگاه‌ها انتخاب کنید</p>
+          <Link to="/stores" className="btn-primary">رفتن به فروشگاه‌ها</Link>
+        </div>
       </div>
     );
   }
 
+  const total = getTotalPrice();
+
   return (
-    <div style={{ maxWidth: 800, margin: '2rem auto', padding: '0 1rem' }}>
-      <h1 style={{ marginBottom: '1.5rem' }}>🛒 سبد خرید</h1>
-      <div>
-        {items.map(item => (
-          <div key={item.id} className="card" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem', padding: '1rem' }}>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0 }}>{item.name}</h3>
-              <p style={{ color: '#e63946', fontWeight: 600, margin: '4px 0 0' }}>{formatPrice(item.price)}</p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <button className="btn btn-secondary" style={{ padding: '4px 12px' }}
-                onClick={() => updateQuantity(item.id, item.quantity - 1)}>-</button>
-              <span style={{ minWidth: 30, textAlign: 'center' }}>{item.quantity}</span>
-              <button className="btn btn-secondary" style={{ padding: '4px 12px' }}
-                onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
-            </div>
-            <button className="btn" style={{ background: '#fee2e2', color: '#e63946', padding: '6px 12px', border: 'none', borderRadius: 6, cursor: 'pointer' }}
-              onClick={() => removeItem(item.id)}>حذف</button>
-          </div>
-        ))}
-      </div>
-      <div className="card" style={{ padding: '1.5rem', marginTop: '1rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '1.1rem' }}>جمع کل:</span>
-          <strong style={{ fontSize: '1.3rem', color: '#e63946' }}>{formatPrice(getTotalPrice())}</strong>
+    <div className="cart-page" dir="rtl">
+      <div className="cart-container">
+        <div className="cart-header">
+          <h1>🛒 سبد خرید</h1>
+          <button className="clear-btn" onClick={clearCart}>خالی کردن سبد</button>
         </div>
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-          <button className="btn btn-primary" style={{ flex: 1 }}>ثبت سفارش</button>
-          <button className="btn btn-secondary" onClick={clearCart}>پاک کردن</button>
+
+        <div className="cart-layout">
+          <div className="cart-items">
+            {items.map((item) => (
+              <div className="cart-item" key={item.id}>
+                <div className="item-image">
+                  {item.image_url
+                    ? <img src={item.image_url} alt={item.name} />
+                    : <span>📦</span>
+                  }
+                </div>
+                <div className="item-info">
+                  <h3>{item.name}</h3>
+                  <p className="item-price">{item.price.toLocaleString('fa-IR')} تومان</p>
+                </div>
+                <div className="item-qty">
+                  <button onClick={() => updateQuantity(item.id, item.quantity - 1)}>−</button>
+                  <span>{item.quantity}</span>
+                  <button onClick={() => updateQuantity(item.id, item.quantity + 1)}>+</button>
+                </div>
+                <div className="item-total">
+                  {(item.price * item.quantity).toLocaleString('fa-IR')} تومان
+                </div>
+                <button className="remove-btn" onClick={() => removeItem(item.id)}>×</button>
+              </div>
+            ))}
+          </div>
+
+          <div className="cart-summary">
+            <h2>خلاصه سفارش</h2>
+            <div className="summary-row">
+              <span>جمع کالاها:</span>
+              <span>{items.reduce((s, i) => s + i.quantity, 0)} عدد</span>
+            </div>
+            <div className="summary-row">
+              <span>جمع کل:</span>
+              <span>{total.toLocaleString('fa-IR')} تومان</span>
+            </div>
+            <div className="summary-row delivery">
+              <span>هزینه ارسال:</span>
+              <span>توسط فروشنده تعیین می‌شود</span>
+            </div>
+            <div className="summary-total">
+              <span>جمع قابل پرداخت:</span>
+              <strong>{total.toLocaleString('fa-IR')} تومان</strong>
+            </div>
+            <button className="checkout-btn">درگاه پرداخت</button>
+            <Link to="/stores" className="continue-btn">ادامه خرید</Link>
+          </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default CartPage;
+}

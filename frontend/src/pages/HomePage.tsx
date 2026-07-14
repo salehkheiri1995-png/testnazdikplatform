@@ -1,59 +1,117 @@
 import { Link } from 'react-router-dom';
 import './HomePage.css';
 
+const categories = [
+  { icon: '🧹', label: 'نظافت', to: '/services' },
+  { icon: '🔧', label: 'تعمیرات', to: '/services' },
+  { icon: '📚', label: 'آموزش', to: '/services' },
+  { icon: '🚗', label: 'حمل و نقل', to: '/services' },
+  { icon: '🏪', label: 'سوپرمارکت', to: '/stores' },
+  { icon: '👗', label: 'پوشاک', to: '/stores' },
+  { icon: '📱', label: 'الکترونیک', to: '/products' },
+  { icon: '🍔', label: 'غذا', to: '/stores' },
+];
+
 const HomePage = () => {
   return (
-    <div className="home-page">
+    <div className="home-page" dir="rtl">
+
+      {/* Hero */}
       <section className="hero">
-        <h1 className="hero-title">🎯 نزدیک</h1>
-        <p className="hero-subtitle">پلتفرم خدمات و کالاهای محلی</p>
-        <div className="hero-buttons">
-          <Link to="/services" className="btn btn-primary btn-lg">مشاهده خدمات</Link>
-          <Link to="/stores" className="btn btn-secondary btn-lg">فروشگاه‌ها</Link>
+        <div className="hero-content">
+          <h1>هر چیزی که نیاز داری، <br /><span>نزدیک</span> پیداش کن!</h1>
+          <p>خدمات محلی، کالاهای فیزیکی و فروشگاه‌های اطرافتان اینجاست</p>
+          <div className="hero-search">
+            <input type="text" placeholder="دنبال چه میگردید؟ (نظافت، پیتزا، ...)" />
+            <button>🔍 جستجو</button>
+          </div>
+          <div className="hero-buttons">
+            <Link to="/services" className="btn btn-primary">مشاهده خدمات</Link>
+            <Link to="/stores" className="btn btn-outline">فروشگاه‌ها</Link>
+          </div>
+        </div>
+        <div className="hero-image">🏙️</div>
+      </section>
+
+      {/* Categories */}
+      <section className="categories">
+        <div className="section-container">
+          <h2>دسته‌بندی‌ها</h2>
+          <div className="categories-grid">
+            {categories.map((c) => (
+              <Link to={c.to} key={c.label} className="category-card">
+                <span className="cat-icon">{c.icon}</span>
+                <span>{c.label}</span>
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
+      {/* چرا نزدیک */}
       <section className="features">
-        <h2>چرا نزدیک؟</h2>
-        <div className="grid grid-3">
-          <div className="feature-card card">
-            <div className="feature-icon">🏠</div>
-            <h3>خدمات محلی</h3>
-            <p>دسترسی به انواع خدمات محلی مانند نظافت، تعمیرات و آموزش</p>
-          </div>
-          <div className="feature-card card">
-            <div className="feature-icon">🛒</div>
-            <h3>خرید محلی</h3>
-            <p>خرید کالاهای روزمره از فروشگاه‌های محله خودتان</p>
-          </div>
-          <div className="feature-card card">
-            <div className="feature-icon">⭐</div>
-            <h3>نظرات و امتیازها</h3>
-            <p>انتخاب بهترین ارائه‌دهندگان با کمک نظرات کاربران</p>
-          </div>
-          <div className="feature-card card">
-            <div className="feature-icon">💳</div>
-            <h3>پرداخت آنلاین</h3>
-            <p>پرداخت آسان و امن از طریق درگاه‌های بانکی معتبر</p>
-          </div>
-          <div className="feature-card card">
-            <div className="feature-icon">📍</div>
-            <h3>جستجوی مکانی</h3>
-            <p>پیدا کردن نزدیک‌ترین ارائه‌دهندگان با استفاده از نقشه</p>
-          </div>
-          <div className="feature-card card">
-            <div className="feature-icon">🔔</div>
-            <h3>اعلان‌ها</h3>
-            <p>مطلع شدن از وضعیت سفارشات و پیشنهادات ویژه</p>
+        <div className="section-container">
+          <h2>چرا نزدیک؟</h2>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">📍</div>
+              <h3>محلی و سریع</h3>
+              <p>دسترسی به انواع خدمات و کالاها در نزدیکی شما</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">⭐</div>
+              <h3>ارائه‌دهندگان تأییدشده</h3>
+              <p>تمام ارائه‌دهندگان توسط تیم نزدیک بررسی و تأیید شده‌اند</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">💳</div>
+              <h3>پرداخت امن</h3>
+              <p>پرداخت آنلاین و درگاه بانکی امن و سریع</p>
+            </div>
+            <div className="feature-card">
+              <div className="feature-icon">📦</div>
+              <h3>پیگیری سفارش</h3>
+              <p>وضعیت سفارش را در لحظه مشاهده کنید</p>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* دو طرفه */}
+      <section className="two-sides">
+        <div className="section-container">
+          <h2>برای همه</h2>
+          <div className="sides-grid">
+            <div className="side-card customers">
+              <h3>🛍️ مشتریان</h3>
+              <ul>
+                <li>جستجو و سفارش آسان</li>
+                <li>نظرات و امتیازدهی واقعی</li>
+                <li>پیگیری لحظه‌به‌لحظه</li>
+                <li>ذخیره آدرس و تاریخچه</li>
+              </ul>
+              <Link to="/register" className="btn btn-primary">ثبت‌نام رایگان</Link>
+            </div>
+            <div className="side-card providers">
+              <h3>🔧 ارائه‌دهندگان و فروشندگان</h3>
+              <ul>
+                <li>پنل مدیریت حرفه‌ای</li>
+                <li>دریافت سفارشات در لحظه</li>
+                <li>آمار و گزارش درآمد</li>
+                <li>معرفی رایگان به هزاران مشتری</li>
+              </ul>
+              <Link to="/register" className="btn btn-outline">همکاری با ما</Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA */}
       <section className="cta">
         <div className="cta-content">
-          <h2>آماده شروع هستید؟</h2>
-          <p>همین حالا ثبت‌نام کنید و از خدمات نزدیک استفاده کنید</p>
-          <button className="btn btn-primary btn-lg">ثبت‌نام رایگان</button>
+          <h2>امروز شروع کنید!</h2>
+          <p>همین حالا ثبت‌نام کنید و از خدمات نزدیک بهره‌مند شوید</p>
+          <Link to="/register" className="btn btn-white">ثبت‌نام رایگان</Link>
         </div>
       </section>
     </div>
