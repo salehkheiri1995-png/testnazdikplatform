@@ -18,7 +18,9 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
+    from app.models.provider import Provider
     from app.models.saved_address import SavedAddress
+    from app.models.store import Store
 
 
 class User(Base, TimestampMixin):
@@ -76,20 +78,32 @@ class User(Base, TimestampMixin):
         lazy="selectin",
     )
 
+    provider: Mapped[Optional["Provider"]] = relationship(
+        "Provider",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
+    store: Mapped[Optional["Store"]] = relationship(
+        "Store",
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+    )
+
     def __repr__(self) -> str:
         return f"<User id={self.id} phone={self.phone} name={self.full_name}>"
 
     @property
     def is_service_provider(self) -> bool:
         """بررسی اینکه آیا رکورد ServiceProvider دارد."""
-        # در مراحل بعد پیاده‌سازی می‌شود
-        return False  # TODO: check if service_provider relationship exists
+        return self.provider is not None
 
     @property
     def is_store_owner(self) -> bool:
         """بررسی اینکه آیا رکورد Store دارد."""
-        # در مراحل بعد پیاده‌سازی می‌شود
-        return False  # TODO: check if store relationship exists
+        return self.store is not None
 
     @property
     def is_hybrid(self) -> bool:
