@@ -1,54 +1,41 @@
-"""کلاس پایه برای تمام مدل‌های SQLAlchemy.
+"""
+کلاس پایه برای تمام مدل‌ها.
 
-ویژگی‌های مشترک:
-- id: کلید اصلی integer با auto-increment
-- created_at: زمان ایجاد (UTC)
-- updated_at: زمان آخرین ویرایش (UTC، با onupdate خودکار)
+تمام مدل‌ها از Base ارث‌بری می‌کنند و فیلدهای id, created_at, updated_at را دارند.
 
-نکته: تمام datetime ها بدون timezone در SQLAlchemy ذخیره می‌شوند
-اما مقدارشان همیشه UTC است. از timezone=True استفاده می‌کنیم
-تا PostgreSQL به‌درستی TIMESTAMPTZ ذخیره کند.
+نکته مهم: تمام datetimeها با timezone=True ذخیره می‌شوند (UTC).
 """
 
-import datetime
+from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import DateTime
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
 class Base(DeclarativeBase):
-    """DeclarativeBase مشترک برای همه مدل‌ها."""
+    """کلاس پایه برای تمام مدل‌ها."""
 
-    # type annotation map برای Mapped types
-    type_annotation_map = {
-        datetime.datetime: DateTime(timezone=True),
-    }
+    pass
 
 
 class TimestampMixin:
-    """Mixin برای افزودن created_at و updated_at به هر مدل."""
+    """
+    Mixin برای فیلدهای created_at و updated_at.
 
-    created_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        nullable=False,
-        # created_at هرگز تغییر نمی‌کند
-    )
-    updated_at: Mapped[datetime.datetime] = mapped_column(
-        DateTime(timezone=True),
-        server_default=func.now(),
-        onupdate=func.now(),  # SQLAlchemy به‌طور خودکار هنگام update مقدار را تغییر می‌دهد
-        nullable=False,
-    )
-
-
-class BaseModel(Base, TimestampMixin):
-    """کلاس پایه با id، created_at، updated_at.
-
-    تمام مدل‌های اصلی پروژه از این کلاس ارث می‌برند.
-    مدل‌هایی مثل جداول many-to-many که id ندارند مستقیماً از Base ارث می‌برند.
+    تمام datetimeها در UTC ذخیره می‌شوند.
     """
 
-    __abstract__ = True  # این کلاس جدول مجزا نمی‌سازد
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        comment="زمان ساخت (UTC)",
+    )
 
-    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+        nullable=False,
+        comment="زمان بروزرسانی (UTC)",
+    )

@@ -1,98 +1,94 @@
-"""تنظیمات مرکزی اپلیکیشن با Pydantic Settings.
+"""
+تنظیمات اپلیکیشن با Pydantic Settings.
 
-تمام متغیرهای محیطی از فایل .env خوانده می‌شوند.
-هیچ مقدار حساسی (secret, password) نباید در کد hardcode شود.
-
-نکته درباره timezone:
-- تمام datetime ها در دیتابیس به UTC ذخیره می‌شوند (استاندارد جهانی)
-- LOG_TZ=Asia/Tehran فقط برای نمایش timestamp در لاگ‌های سرور است
-- فرانت‌اند تبدیل UTC→جلالی را با dayjs+jalaliday انجام می‌دهد
+نکته مهم درباره TZ:
+- تمام datetimeها در دیتابیس UTC ذخیره می‌شوند
+- TZ=Asia/Tehran فقط برای لاگ‌ها استفاده می‌شود
+- نمایش تقویم جلالی در فرانت‌اند با dayjs + jalaliday
 """
 
-from functools import lru_cache
-from typing import List
+import os
+from typing import Any
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """تنظیمات اپلیکیشن — از .env بارگذاری می‌شود."""
+    """Global application settings."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
-        extra="ignore",  # متغیرهای اضافی در .env نادیده گرفته می‌شوند
+        extra="ignore",
     )
 
-    # ── پایه ──────────────────────────────────────────────────────────
-    app_name: str = "Nazdik"
-    app_version: str = "1.0.0"
-    debug: bool = False
-    secret_key: str  # اجباری — باید در .env تنظیم شود
+    # اپلیکیشن
+    app_name: str = Field(default="نزدیک")
+    app_version: str = Field(default="1.0.0")
+    debug: bool = Field(default=False)
+    environment: str = Field(default="production")
+    log_level: str = Field(default="INFO")
 
-    # ── دیتابیس ───────────────────────────────────────────────────────
-    database_url: str  # مثال: postgresql+asyncpg://user:pass@localhost/db
-    database_pool_size: int = 20
-    database_max_overflow: int = 0
+    # سرور
+    host: str = Field(default="0.0.0.0")
+    port: int = Field(default=8080)
+    workers: int = Field(default=4)
 
-    # ── Redis ─────────────────────────────────────────────────────────
-    redis_url: str = "redis://localhost:6379/0"
-    redis_celery_url: str = "redis://localhost:6379/1"
+    # دیتابیس
+    database_url: str = Field(
+        default="postgresql+asyncpg://nazdik_user:nazdik_pass@localhost:5432/nazdik_db"
+    )
+    database_pool_size: int = Field(default=20)
+    database_max_overflow: int = Field(default=10)
 
-    # ── JWT ───────────────────────────────────────────────────────────
-    jwt_access_token_expire_minutes: int = 15
-    jwt_refresh_token_expire_days: int = 7
-    jwt_algorithm: str = "HS256"
+    # Redis
+    redis_url: str = Field(default="redis://localhost:6379/0")
 
-    # ── SMS ───────────────────────────────────────────────────────────
-    sms_provider: str = "kavenegar"  # kavenegar | mellipayamak | ghasedak
-    sms_api_key: str = ""
-    sms_sender: str = ""
+    # امنیت JWT
+    secret_key: str = Field(default="change-this-in-production")
+    algorithm: str = Field(default="HS256")
+    access_token_expire_minutes: int = Field(default=15)
+    refresh_token_expire_days: int = Field(default=7)
 
-    # ── فایل ──────────────────────────────────────────────────────────
-    media_root: str = "/var/www/nazdik/media"
-    media_url: str = "/media/"
-
-    # ── پرداخت ────────────────────────────────────────────────────────
-    zarinpal_merchant_id: str = ""
-    idpay_api_key: str = ""
-
-    # ── CORS ──────────────────────────────────────────────────────────
-    # در .env به‌صورت کاما-جدا: "http://localhost:5173,https://nazdik.ir"
-    allowed_origins: str = "http://localhost:5173"
+    # CORS
+    allowed_origins: str = Field(default="http://localhost:3000,http://localhost:5173")
 
     @property
-    def allowed_origins_list(self) -> List[str]:
-        """تبدیل رشته کاما-جدا به لیست برای FastAPI CORSMiddleware."""
+    def allowed_origins_list(self) -> list[str]:
+        """تبدیل رشته CORS به لیست."""
         return [origin.strip() for origin in self.allowed_origins.split(",")]
 
-    # ── Rate Limiting ─────────────────────────────────────────────────
-    otp_request_rate_limit: int = 3
-    otp_request_rate_window: int = 600  # ثانیه
-    otp_verify_max_attempts: int = 5
-    otp_verify_lock_seconds: int = 900  # ۱۵ دقیقه
+    # فایل‌ها
+    media_root: str = Field(default="/var/www/nazdik/media")
+    max_upload_size_mb: int = Field(default=10)
 
-    # ── لاگ ───────────────────────────────────────────────────────────
-    # تنها جایی که Asia/Tehran استفاده می‌شود — فقط برای timestamp لاگ
-    log_tz: str = "Asia/Tehran"
-    log_level: str = "INFO"
+    # OTP
+    otp_expire_minutes: int = Field(default=5)
+    otp_length: int = Field(default=6)
+
+    # SMS
+    sms_provider: str = Field(default="kavenegar")
+    sms_api_key: str = Field(default="")
+
+    # Rate Limiting
+    rate_limit_otp_request: str = Field(default="3/10minute")
+    rate_limit_otp_verify: str = Field(default="5/10minute")
+    rate_limit_general: str = Field(default="100/minute")
+
+    # زمان (فقط برای لاگ‌ها)
+    tz: str = Field(default="Asia/Tehran")
 
     @field_validator("secret_key")
     @classmethod
-    def secret_key_must_be_long(cls, v: str) -> str:
-        """کلید مخفی باید حداقل ۳۲ کاراکتر باشد."""
+    def validate_secret_key(cls, v: str) -> str:
+        """بررسی طول کلید محرمانه."""
         if len(v) < 32:
-            raise ValueError("SECRET_KEY باید حداقل ۳۲ کاراکتر باشد")
+            raise ValueError("SECRET_KEY must be at least 32 characters long")
         return v
 
 
-@lru_cache
-def get_settings() -> Settings:
-    """Singleton برای Settings — کش می‌شود تا فقط یک بار .env خوانده شود."""
-    return Settings()
-
-
-# instance قابل import برای استفاده مستقیم
-settings = get_settings()
+# تنظیم TZ برای لاگ‌ها (فقط برای نمایش)
+settings = Settings()
+os.environ["TZ"] = settings.tz

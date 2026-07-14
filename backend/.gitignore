@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 build/
+develop-eggs/
 dist/
 downloads/
 eggs/
@@ -20,22 +21,26 @@ share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
-MANIFEST
+PIPFILE.lock
 
-# Virtual environments
-.env
-.venv
-env/
+# Virtual Environment
 venv/
 ENV/
-env.bak/
-venv.bak/
+env/
+.venv/
 
-# IDEs
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
+*~
+.DS_Store
 
 # Testing
 .pytest_cache/
@@ -44,16 +49,24 @@ htmlcov/
 .tox/
 
 # Alembic
-alembic/versions/__pycache__/
-
-# Media uploads (فایل‌های آپلود شده نباید در گیت باشند)
-media/
-/var/www/nazdik/media/
-
-# OS
-.DS_Store
-Thumbs.db
+alembic/versions/*.pyc
 
 # Logs
 *.log
 logs/
+
+# Media files
+media/
+static/
+
+# Database
+*.db
+*.sqlite3
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Backup
+*.bak
+*.backup

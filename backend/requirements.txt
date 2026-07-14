@@ -7,14 +7,18 @@ sqlalchemy==2.0.36
 asyncpg==0.30.0
 alembic==1.14.0
 geoalchemy2==0.17.1
+psycopg2-binary==2.9.10  # برای PostGIS
+Shapely==2.0.6  # برای GeoAlchemy2
 
 # اعتبارسنجی
 pydantic==2.10.3
 pydantic-settings==2.6.1
+email-validator==2.2.0
 
 # احراز هویت و رمزنگاری
 PyJWT==2.8.0
 passlib[bcrypt]==1.7.4
+python-multipart==0.0.19
 
 # Redis و Celery
 redis==5.2.1
@@ -27,7 +31,6 @@ Pillow==11.0.0
 httpx==0.28.1
 
 # ابزارها
-python-multipart==0.0.19
 python-dotenv==1.0.1
 pytz==2024.2
 
@@ -35,3 +38,4 @@ pytz==2024.2
 pytest==8.3.4
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
+faker==33.1.0
