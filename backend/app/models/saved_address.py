@@ -1,76 +1,64 @@
-"""مدل SavedAddress — آدرس‌های ذخیره‌شده کاربر.
-
-کاربران می‌توانند چندین آدرس (خانه، محل کار، ...) ذخیره کنند.
-هنگام رزرو خدمات یا سفارش کالا، از این آدرس‌ها انتخاب می‌کنند.
-
-هر کاربر یک آدرس پیش‌فرض (is_default=True) می‌تواند داشته باشد.
-منطق «فقط یک is_default» در لایه Service پیاده‌سازی می‌شود.
 """
+مدل SavedAddress - آدرس‌های ذخیره‌شدة کاربر.
 
-from __future__ import annotations
+برای سهولت در رزرو خدمات و خرید کالا.
+"""
 
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Boolean, Float, ForeignKey, String, Text
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
+from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.user import User
 
 
-class SavedAddress(BaseModel):
-    """آدرس ذخیره‌شده کاربر.
+class SavedAddress(Base, TimestampMixin):
+    """
+    جدول آدرس‌های ذخیره‌شده.
 
-    Attributes:
-        user_id: FK به users.id
-        label: برچسب (خانه، محل کار، ...)
-        full_address: آدرس کامل متنی
-        lat: عرض جغرافیایی
-        lng: طول جغرافیایی
-        is_default: آیا آدرس پیش‌فرض است
+    هر کاربر می‌تواند چندین آدرس (خانه، محل کار، ...) ذخیره کند.
     """
 
     __tablename__ = "saved_addresses"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # صاحب آدرس
     user_id: Mapped[int] = mapped_column(
+        Integer,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
+        comment="شناسه کاربر",
     )
+
+    # برچسب (خانه، محل کار، ...)
     label: Mapped[str] = mapped_column(
-        String(50),
-        nullable=False,
-        comment="مثال: خانه، محل کار، مادربزرگ",
+        String(50), nullable=False, comment="برچسب آدرس"
     )
+
+    # آدرس کامل
     full_address: Mapped[str] = mapped_column(
-        Text,
-        nullable=False,
-        comment="آدرس کامل متنی",
+        Text, nullable=False, comment="آدرس کامل متنی"
     )
-    lat: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        comment="عرض جغرافیایی (latitude)",
-    )
-    lng: Mapped[float] = mapped_column(
-        Float,
-        nullable=False,
-        comment="طول جغرافیایی (longitude)",
-    )
+
+    # مختصات جغرافیایی
+    lat: Mapped[float] = mapped_column(Float, nullable=False, comment="عرض جغرافیایی")
+    lng: Mapped[float] = mapped_column(Float, nullable=False, comment="طول جغرافیایی")
+
+    # آدرس پیش‌فرض
     is_default: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
-        server_default="false",
         nullable=False,
+        comment="آیا آدرس پیش‌فرض است",
     )
 
-    # ── Relationships ─────────────────────────────────────────────────
-    user: Mapped[User] = relationship(
-        "User",
-        back_populates="saved_addresses",
-    )
+    # Relations
+    user: Mapped["User"] = relationship("User", back_populates="saved_addresses")
 
     def __repr__(self) -> str:
-        return f"<SavedAddress id={self.id} user_id={self.user_id} label={self.label}>"
+        return f"<SavedAddress id={self.id} label={self.label} user_id={self.user_id}>"

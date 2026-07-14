@@ -1,96 +1,89 @@
-"""مدل Category — دسته‌بندی‌های چندسطحی.
+"""
+مدل Category - دسته‌بندی خدمات و محصولات.
 
-درخت دسته‌بندی با self-referential FK پیاده‌سازی شده.
-نوع دسته‌بندی (service/product/both) مشخص می‌کند در کجا نمایش داده شود.
+نکته مهم: یک دسته‌بندی می‌تواند فقط برای خدمات، فقط برای محصولات،
+یا برای هر دو باشد (type: service/product/both).
 """
 
-from __future__ import annotations
-
-from typing import TYPE_CHECKING
-
 import enum
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Enum as SAEnum, ForeignKey, String
+from sqlalchemy import Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
+from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.product import Product
-    from app.models.service import Service
+    pass  # Relations در مراحل بعد
 
 
 class CategoryType(str, enum.Enum):
-    """نوع دسته‌بندی — تعیین می‌کند در بخش خدمات یا فروشگاه نمایش داده شود."""
+    """نوع دسته‌بندی."""
 
-    SERVICE = "service"  # فقط در بخش خدمات
-    PRODUCT = "product"  # فقط در بخش فروشگاه
-    BOTH = "both"  # در هر دو بخش
+    SERVICE = "service"  # فقط برای خدمات
+    PRODUCT = "product"  # فقط برای محصولات
+    BOTH = "both"  # برای هر دو
 
 
-class Category(BaseModel):
-    """دسته‌بندی خدمات و محصولات.
+class Category(Base, TimestampMixin):
+    """
+    جدول دسته‌بندی‌ها.
 
-    Attributes:
-        name: نام فارسی دسته‌بندی
-        slug: شناسه URL-friendly (یکتا)
-        parent_id: FK به parent category (برای ساختار درختی)
-        type: نوع — service/product/both
-        icon: نام آیکون یا URL آن
+    ساختار چندسطحی (parent_id برای زیردسته‌ها).
     """
 
     __tablename__ = "categories"
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # نام و slug
     name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
-        comment="نام فارسی دسته‌بندی",
+        String(255), nullable=False, comment="نام دسته‌بندی"
     )
     slug: Mapped[str] = mapped_column(
-        String(100),
+        String(255),
         unique=True,
+        nullable=False,
         index=True,
-        nullable=False,
-        comment="شناسه URL — مثال: home-cleaning",
-    )
-    parent_id: Mapped[int | None] = mapped_column(
-        ForeignKey("categories.id", ondelete="SET NULL"),
-        nullable=True,
-        comment="دسته‌بندی والد — null یعنی دسته ریشه",
-    )
-    type: Mapped[CategoryType] = mapped_column(
-        SAEnum(CategoryType, name="category_type_enum"),
-        nullable=False,
-        comment="نوع: service یا product یا both",
-    )
-    icon: Mapped[str | None] = mapped_column(
-        String(200),
-        nullable=True,
-        comment="نام آیکون (مثال: wrench) یا URL SVG",
+        comment="Slug برای URL",
     )
 
-    # ── Relationships ─────────────────────────────────────
-    parent: Mapped[Category | None] = relationship(
-        "Category",
-        remote_side="Category.id",  # self-referential
-        back_populates="children",
-        lazy="select",
+    # زیردسته (برای ساختار چندسطحی)
+    parent_id: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        ForeignKey("categories.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+        comment="دسته‌بندی والد",
     )
-    children: Mapped[list[Category]] = relationship(
+
+    # نوع دسته‌بندی
+    type: Mapped[CategoryType] = mapped_column(
+        Enum(CategoryType, native_enum=False),
+        nullable=False,
+        index=True,
+        comment="نوع دسته‌بندی (service/product/both)",
+    )
+
+    # آیکون (برای نمایش در UI)
+    icon: Mapped[Optional[str]] = mapped_column(
+        String(100), nullable=True, comment="نام یا URL آیکون"
+    )
+
+    # Relations
+    # parent/children برای ساختار چندسطحی
+    parent: Mapped[Optional["Category"]] = relationship(
+        "Category",
+        remote_side=[id],
+        back_populates="children",
+        foreign_keys=[parent_id],
+    )
+    children: Mapped[list["Category"]] = relationship(
         "Category",
         back_populates="parent",
-        lazy="select",
-    )
-    
-    # خدمات و محصولات
-    services: Mapped[list[Service]] = relationship(
-        "Service",
-        back_populates="category",
-    )
-    products: Mapped[list[Product]] = relationship(
-        "Product",
-        back_populates="category",
+        cascade="all, delete-orphan",
+        foreign_keys=[parent_id],
     )
 
     def __repr__(self) -> str:
-        return f"<Category id={self.id} slug={self.slug} type={self.type}>"
+        return f"<Category id={self.id} name={self.name} type={self.type}>"

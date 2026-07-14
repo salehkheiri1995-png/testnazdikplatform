@@ -1,160 +1,97 @@
-"""مدل User — کاربران سیستم.
+"""
+مدل User - بدون Enum نقش.
 
-طراحی نقش‌ها:
-  به‌جای Enum ثابت برای نقش، نقش از وجود رکورد مرتبط تشخیص داده می‌شود:
-  - کاربر عادی (Client): هر User پایه
-  - ارائه‌دهنده خدمات: User با رکورد Provider
-  - فروشنده: User با رکورد Store
-  - Hybrid: User که هم Provider هم Store دارد
-  - ادمین: فیلد بولی is_admin (جدا از سایر نقش‌ها)
+نکته مهم: نقش کاربر از روی وجود رکورد مرتبط تشخیص داده می‌شود:
+- اگر ServiceProvider دارد → ارائه‌دهنده خدمات
+- اگر Store دارد → فروشنده
+- اگر هر دو دارد → Hybrid (ترکیبی)
+- is_admin به صورت فیلد مجزا
+
+این طراحی انعطاف‌پذیری بیشتری برای نقش‌های ترکیبی فراهم می‌کند.
 """
 
-from __future__ import annotations
+from typing import TYPE_CHECKING, Optional
 
-from typing import TYPE_CHECKING
-
-from sqlalchemy import Boolean, String, UniqueConstraint
+from sqlalchemy import Boolean, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.models.base import BaseModel
+from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    from app.models.favorite import Favorite
-    from app.models.message import Message
-    from app.models.notification import Notification
-    from app.models.order import Order
-    from app.models.payment import Payment
-    from app.models.provider import Provider
-    from app.models.review import Review
     from app.models.saved_address import SavedAddress
-    from app.models.store import Store
 
 
-class User(BaseModel):
-    """مدل کاربر.
+class User(Base, TimestampMixin):
+    """
+    جدول کاربران.
 
-    Attributes:
-        phone: شماره موبایل ایرانی (+98 یا 09...) — یکتا
-        full_name: نام کامل
-        is_verified_identity: احراز هویت KYC انجام شده
-        is_admin: دسترسی ادمین (نه بخشی از Enum نقش)
-        avatar_url: مسیر نسبی یا URL آواتار (nullable)
+    بدون Enum نقش - نقش‌ها از روی رکوردهای مرتبط تشخیص داده می‌شوند.
     """
 
     __tablename__ = "users"
-    __table_args__ = (
-        UniqueConstraint("phone", name="uq_users_phone"),
-    )
 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+
+    # شماره تلفن (یونیک و اصلی‌ترین شناسه)
     phone: Mapped[str] = mapped_column(
         String(15),
         unique=True,
+        nullable=False,
         index=True,
-        nullable=False,
-        comment="شماره موبایل — فرمت: 09xxxxxxxxx",
+        comment="شماره تلفن (فرمت: +989123456789)",
     )
+
+    # اطلاعات شخصی
     full_name: Mapped[str] = mapped_column(
-        String(100),
-        nullable=False,
+        String(255), nullable=False, comment="نام کامل"
     )
+
+    # احراز هویت
     is_verified_identity: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
-        server_default="false",
         nullable=False,
-        comment="آیا KYC/احراز هویت تکمیل شده",
+        comment="آیا هویت تأیید شده (KYC)",
     )
+
+    # دسترسی ادمین
     is_admin: Mapped[bool] = mapped_column(
         Boolean,
         default=False,
-        server_default="false",
         nullable=False,
-        comment="دسترسی ادمین — مستقل از نقش‌های دیگر",
-    )
-    avatar_url: Mapped[str | None] = mapped_column(
-        String(500),
-        nullable=True,
-        comment="مسیر نسبی تصویر پروفایل — serve از Nginx",
+        index=True,
+        comment="دسترسی مدیریتی",
     )
 
-    # ── Relationships ─────────────────────────────────────
-    saved_addresses: Mapped[list[SavedAddress]] = relationship(
+    # تصویر پروفایل
+    avatar_url: Mapped[Optional[str]] = mapped_column(
+        String(500), nullable=True, comment="URL تصویر پروفایل"
+    )
+
+    # Relations
+    saved_addresses: Mapped[list["SavedAddress"]] = relationship(
         "SavedAddress",
         back_populates="user",
         cascade="all, delete-orphan",
-        lazy="select",
-    )
-    notifications: Mapped[list[Notification]] = relationship(
-        "Notification",
-        back_populates="user",
-        cascade="all, delete-orphan",
-        lazy="select",
-    )
-    
-    # نقش‌ها
-    provider: Mapped[Provider | None] = relationship(
-        "Provider",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
-    store: Mapped[Store | None] = relationship(
-        "Store",
-        back_populates="user",
-        uselist=False,
-        cascade="all, delete-orphan",
-    )
-    
-    # سفارشات و پرداخت‌ها
-    orders: Mapped[list[Order]] = relationship(
-        "Order",
-        foreign_keys="Order.customer_id",
-        back_populates="customer",
-        cascade="all, delete-orphan",
-    )
-    payments: Mapped[list[Payment]] = relationship(
-        "Payment",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-    
-    # نظرات
-    reviews: Mapped[list[Review]] = relationship(
-        "Review",
-        back_populates="user",
-        cascade="all, delete-orphan",
-    )
-    
-    # پیام‌ها
-    sent_messages: Mapped[list[Message]] = relationship(
-        "Message",
-        foreign_keys="Message.sender_id",
-        back_populates="sender",
-        cascade="all, delete-orphan",
-    )
-    received_messages: Mapped[list[Message]] = relationship(
-        "Message",
-        foreign_keys="Message.receiver_id",
-        back_populates="receiver",
-        cascade="all, delete-orphan",
-    )
-    
-    # علاقه‌مندی‌ها
-    favorites: Mapped[list[Favorite]] = relationship(
-        "Favorite",
-        back_populates="user",
-        cascade="all, delete-orphan",
+        lazy="selectin",
     )
 
     def __repr__(self) -> str:
-        return f"<User id={self.id} phone={self.phone}>"
+        return f"<User id={self.id} phone={self.phone} name={self.full_name}>"
 
     @property
     def is_service_provider(self) -> bool:
-        """آیا این کاربر ارائه‌دهنده خدمات است."""
-        return hasattr(self, "provider") and self.provider is not None
+        """بررسی اینکه آیا رکورد ServiceProvider دارد."""
+        # در مراحل بعد پیاده‌سازی می‌شود
+        return False  # TODO: check if service_provider relationship exists
 
     @property
     def is_store_owner(self) -> bool:
-        """آیا این کاربر صاحب فروشگاه است."""
-        return hasattr(self, "store") and self.store is not None
+        """بررسی اینکه آیا رکورد Store دارد."""
+        # در مراحل بعد پیاده‌سازی می‌شود
+        return False  # TODO: check if store relationship exists
+
+    @property
+    def is_hybrid(self) -> bool:
+        """بررسی اینکه آیا هم ارائه‌دهنده و هم فروشنده است."""
+        return self.is_service_provider and self.is_store_owner
