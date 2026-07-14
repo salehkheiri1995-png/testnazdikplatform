@@ -13,6 +13,8 @@ from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.models.neighborhood import Neighborhood
+    from app.models.provider import Provider
+    from app.models.store import Store
 
 
 class City(Base, TimestampMixin):
@@ -53,6 +55,16 @@ class City(Base, TimestampMixin):
         "Neighborhood",
         back_populates="city",
         cascade="all, delete-orphan",
+    )
+
+    providers: Mapped[list["Provider"]] = relationship(
+        "Provider",
+        back_populates="city",
+    )
+
+    stores: Mapped[list["Store"]] = relationship(
+        "Store",
+        back_populates="city",
     )
 
     def __repr__(self) -> str:
