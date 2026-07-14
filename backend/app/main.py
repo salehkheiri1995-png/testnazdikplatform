@@ -1,12 +1,5 @@
 """
 نقطه ورود اصلی اپلیکیشن FastAPI.
-
-lifespan context manager:
-- startup: بررسی اتصال دیتابیس
-- shutdown: بستن poolهای اتصال
-
-Endpoints اولیه:
-- GET /health — بررسی سلامت سرویس (برای load balancer)
 """
 
 import logging
@@ -20,8 +13,8 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.core.database import engine
+from app.api.v1 import api_router
 
-# تنظیم لاگر
 logging.basicConfig(
     level=getattr(logging, settings.log_level.upper(), logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -32,14 +25,10 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """مدیریت چرخه حیات اپلیکیشن."""
-    # ── Startup ──────────────────────────────────
     logger.info("🚀 نزدیک Backend starting up...")
     logger.info(f"App: {settings.app_name} v{settings.app_version}")
     logger.info(f"Environment: {settings.environment}")
-    logger.info(f"Debug mode: {settings.debug}")
 
-    # بررسی اتصال به دیتابیس
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
@@ -48,49 +37,38 @@ async def lifespan(app: FastAPI):
         logger.error(f"❌ Database connection failed: {e}")
         raise
 
-    # بررسی PostGIS extension
-    try:
-        async with engine.connect() as conn:
-            result = await conn.execute(
-                text("SELECT PostGIS_Version()")
-            )
-            version = result.scalar()
-            logger.info(f"✅ PostGIS version: {version}")
-    except Exception as e:
-        logger.warning(f"⚠️ PostGIS not available: {e}")
+    yield
 
-    yield  # اپلیکیشن در حال اجراست
-
-    # ── Shutdown ──────────────────────────────────
     logger.info("🛑 نزدیک Backend shutting down...")
     await engine.dispose()
-    logger.info("✅ Database connections closed")
 
 
-# ساخت app
 app = FastAPI(
     title=settings.app_name,
     version=settings.app_version,
     description="پلتفرم جامع خدمات و کالاهای محلی برای ایران",
-    docs_url="/docs" if settings.debug else None,
-    redoc_url="/redoc" if settings.debug else None,
+    docs_url="/docs",
+    redoc_url="/redoc",
     lifespan=lifespan,
 )
 
-# CORS Middleware
+# CORS - همه origins برای dev
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins_list,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allow_headers=["Authorization", "Content-Type", "Accept"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
-# Request timing middleware
 @app.middleware("http")
 async def add_process_time_header(request: Request, call_next):
-    """اضافه X-Process-Time به header response."""
     start_time = time.perf_counter()
     response = await call_next(request)
     process_time = (time.perf_counter() - start_time) * 1000
@@ -98,45 +76,27 @@ async def add_process_time_header(request: Request, call_next):
     return response
 
 
-# Health Check Endpoint
-@app.get(
-    "/health",
-    tags=["system"],
-    summary="بررسی سلامت سرویس",
-)
+# ✅ ثبت روترهای v1
+app.include_router(api_router, prefix="/api/v1")
+
+
+@app.get("/health", tags=["system"])
 async def health_check() -> dict[str, Any]:
-    """
-    Health check endpoint برای load balancer و monitoring.
-
-    بدون نیاز به احراز هویت.
-
-    Returns:
-        dict: وضعیت سرویس و اجزای مختلف
-    """
     health: dict[str, Any] = {
         "status": "ok",
         "service": settings.app_name,
         "version": settings.app_version,
-        "environment": settings.environment,
-        "components": {},
     }
-
-    # بررسی دیتابیس
     try:
         async with engine.connect() as conn:
             await conn.execute(text("SELECT 1"))
-        health["components"]["database"] = "ok"
+        health["database"] = "ok"
     except Exception as e:
-        health["components"]["database"] = f"error: {str(e)}"
+        health["database"] = f"error: {str(e)}"
         health["status"] = "degraded"
-
     return health
 
 
 @app.get("/", include_in_schema=False)
 async def root() -> dict[str, str]:
-    """صفحه اصلی API."""
-    return {
-        "message": f"نزدیک API v{settings.app_version}",
-        "docs": "/docs" if settings.debug else "disabled in production",
-    }
+    return {"message": f"نزدیک API v{settings.app_version}", "docs": "/docs"}

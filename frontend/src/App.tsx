@@ -4,6 +4,12 @@ import ServicesPage from './pages/ServicesPage';
 import StoresPage from './pages/StoresPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
 import StoreDetailPage from './pages/StoreDetailPage';
+import ProductsPage from './pages/ProductsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import CartPage from './pages/CartPage';
+import OrdersPage from './pages/OrdersPage';
+import NotFoundPage from './pages/NotFoundPage';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import './App.css';
@@ -19,6 +25,12 @@ function App() {
           <Route path="/services/:id" element={<ServiceDetailPage />} />
           <Route path="/stores" element={<StoresPage />} />
           <Route path="/stores/:id" element={<StoreDetailPage />} />
+          <Route path="/products" element={<ProductsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/cart" element={<CartPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
       <Footer />
