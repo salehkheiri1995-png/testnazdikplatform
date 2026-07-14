@@ -1,51 +1,84 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
+import { useService } from '../api/services';
+import { formatPrice, formatDate } from '../utils/helpers';
 import './ServiceDetailPage.css';
 
 const ServiceDetailPage = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const serviceId = Number(id);
+  
+  const { data: service, isLoading, error } = useService(serviceId);
+
+  if (isLoading) {
+    return <div className="loading">در حال بارگذاری...</div>;
+  }
+
+  if (error || !service) {
+    return <div className="error">خدمت مورد نظر یافت نشد</div>;
+  }
 
   return (
-    <div className="detail-page">
-      <div className="detail-header">
-        <div className="detail-icon">🏠</div>
-        <div>
-          <h1>نظافت منزل</h1>
-          <p className="provider">شرکت نظافتی ABC</p>
-          <div className="rating-detail">⭐ 4.8 (127 نظر)</div>
+    <div className="service-detail-page">
+      <div className="breadcrumb">
+        <Link to="/">خانه</Link> / 
+        <Link to="/services">خدمات</Link> / 
+        <span>{service.title}</span>
+      </div>
+
+      <div className="service-detail">
+        <div className="service-header">
+          <div className="service-image-large">{service.image_url || '🛠️'}</div>
+          <div className="service-info">
+            <h1>{service.title}</h1>
+            <div className="service-meta">
+              <span className="rating">⭐ {service.rating?.toFixed(1) || 'جدید'}</span>
+              <span>({service.review_count || 0} نظر)</span>
+              <span>👁️ {service.view_count || 0} بازدید</span>
+            </div>
+            <div className="service-price">
+              {service.discount_percent ? (
+                <>
+                  <span className="original-price">{formatPrice(service.price)}</span>
+                  <span className="discount-badge">%{service.discount_percent} تخفیف</span>
+                </>
+              ) : null}
+              <span className="final-price">{formatPrice(service.final_price || service.price)}</span>
+            </div>
+          </div>
+        </div>
+
+        {service.provider && (
+          <div className="provider-section card">
+            <h2>ارائه‌دهنده خدمت</h2>
+            <div className="provider-info">
+              <div className="provider-name">{service.provider.business_name}</div>
+              <div className="provider-details">
+                <span>📞 {service.provider.phone}</span>
+                <span>📍 {service.provider.city} {service.provider.neighborhood}</span>
+                {service.provider.is_verified && <span>✅ تأیید شده</span>}
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="service-description card">
+          <h2>توضیحات خدمت</h2>
+          <p>{service.description || 'توضیحات موجود نیست'}</p>
+        </div>
+
+        <div className="service-location card">
+          <h2>موقعیت مکانی</h2>
+          <p>📍 {service.city} {service.neighborhood ? `- ${service.neighborhood}` : ''}</p>
+        </div>
+
+        <div className="action-buttons">
+          <button className="btn btn-primary btn-lg">سفارش این خدمت</button>
+          <button className="btn btn-secondary btn-lg">تماس با ارائه‌دهنده</button>
         </div>
       </div>
 
-      <div className="detail-grid">
-        <div className="detail-main">
-          <section className="card">
-            <h2>توضیحات خدمت</h2>
-            <p>ارائه خدمات نظافت حرفه‌ای منزل شامل تمیز کردن کف، شیشه‌ها، آشپزخانه و سرویس‌های بهداشتی. تیم ما با استفاده از بهترین تجهیزات و مواد شوینده، منزل شما را به‌طور کامل تمیز و ضدعفونی می‌کند.</p>
-          </section>
-
-          <section className="card">
-            <h2>ویژگی‌ها</h2>
-            <ul className="features-list">
-              <li>✅ تیم حرفه‌ای و با تجربه</li>
-              <li>✅ استفاده از مواد شوینده استاندارد</li>
-              <li>✅ بیمه مسئولیت</li>
-              <li>✅ گارانتی رضایت</li>
-            </ul>
-          </section>
-        </div>
-
-        <div className="detail-sidebar">
-          <div className="card price-card">
-            <div className="price-value">500,000 تومان</div>
-            <p className="price-note">قیمت تقریبی - بسته به وسعت منزل متغیر است</p>
-            <button className="btn btn-primary btn-block">درخواست خدمت</button>
-          </div>
-
-          <div className="card">
-            <h3>اطلاعات تماس</h3>
-            <p>📞 021-12345678</p>
-            <p>📍 تهران، منطقه 3</p>
-          </div>
-        </div>
+      <div className="created-at">
+        ثبت شده در: {formatDate(service.created_at)}
       </div>
     </div>
   );

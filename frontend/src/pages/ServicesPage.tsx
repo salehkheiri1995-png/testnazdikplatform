@@ -1,16 +1,28 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useServices } from '../api/services';
+import { formatPrice } from '../utils/helpers';
 import './ServicesPage.css';
 
 const ServicesPage = () => {
-  const [services] = useState([
-    { id: 1, title: 'نظافت منزل', provider: 'شرکت نظافتی ABC', price: '500,000', rating: 4.8, image: '🏠' },
-    { id: 2, title: 'تعمیر یخچال', provider: 'تعمیرگاه الکترونیک', price: '300,000', rating: 4.5, image: '🔧' },
-    { id: 3, title: 'آموزش زبان انگلیسی', provider: 'استاد محمدی', price: '400,000', rating: 4.9, image: '📚' },
-    { id: 4, title: 'حمل اثاثیه', provider: 'باربری سریع', price: '800,000', rating: 4.6, image: '🚚' },
-    { id: 5, title: 'آرایشگری', provider: 'سالن زیبایی نگار', price: '250,000', rating: 4.7, image: '💇' },
-    { id: 6, title: 'تعمیر کولر', provider: 'سرویس تهویه', price: '350,000', rating: 4.4, image: '❄️' },
-  ]);
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [categoryId, setCategoryId] = useState<number | undefined>(undefined);
+  
+  const { data, isLoading, error } = useServices({
+    page,
+    page_size: 12,
+    search: search || undefined,
+    category_id: categoryId,
+  });
+
+  if (isLoading) {
+    return <div className="loading">در حال بارگذاری...</div>;
+  }
+
+  if (error) {
+    return <div className="error">خطا در بارگذاری خدمات</div>;
+  }
 
   return (
     <div className="services-page">
@@ -20,28 +32,58 @@ const ServicesPage = () => {
       </div>
 
       <div className="filters">
-        <input type="text" placeholder="جستجو در خدمات..." className="search-input" />
-        <select className="filter-select">
-          <option>همه دسته‌بندی‌ها</option>
-          <option>نظافت</option>
-          <option>تعمیرات</option>
-          <option>آموزش</option>
+        <input 
+          type="text" 
+          placeholder="جستجو در خدمات..." 
+          className="search-input"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select 
+          className="filter-select"
+          value={categoryId || ''}
+          onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : undefined)}
+        >
+          <option value="">همه دسته‌بندی‌ها</option>
+          <option value="1">نظافت</option>
+          <option value="2">تعمیرات</option>
+          <option value="3">آموزش</option>
         </select>
       </div>
 
       <div className="grid grid-3">
-        {services.map((service) => (
+        {data?.items.map((service) => (
           <Link to={`/services/${service.id}`} key={service.id} className="service-card card">
-            <div className="service-image">{service.image}</div>
+            <div className="service-image">{service.image_url || '🛠️'}</div>
             <h3>{service.title}</h3>
-            <p className="provider-name">{service.provider}</p>
+            <p className="provider-name">{service.provider?.business_name || 'ارائه‌دهنده'}</p>
             <div className="service-footer">
-              <div className="rating">⭐ {service.rating}</div>
-              <div className="price">{service.price} تومان</div>
+              <div className="rating">⭐ {service.rating?.toFixed(1) || 'جدید'}</div>
+              <div className="price">{formatPrice(service.final_price || service.price)}</div>
             </div>
           </Link>
         ))}
       </div>
+
+      {data && data.total_pages > 1 && (
+        <div className="pagination">
+          <button 
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            disabled={page === 1}
+            className="btn btn-secondary"
+          >
+            قبلی
+          </button>
+          <span>صفحه {page} از {data.total_pages}</span>
+          <button 
+            onClick={() => setPage(p => Math.min(data.total_pages, p + 1))} 
+            disabled={page === data.total_pages}
+            className="btn btn-secondary"
+          >
+            بعدی
+          </button>
+        </div>
+      )}
     </div>
   );
 };
