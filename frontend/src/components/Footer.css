@@ -1,35 +1,53 @@
 .footer {
-  background: #1a1a2e;
-  color: #ccc;
-  margin-top: auto;
+  background: #0a0a14;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
 .footer-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 60px 20px 40px;
+  padding: 64px 24px 48px;
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1fr;
   gap: 40px;
 }
 
-.footer-brand h2 { color: #a78bfa; font-size: 1.6rem; margin-bottom: 12px; }
-.footer-brand p { font-size: 0.9rem; line-height: 1.7; margin-bottom: 20px; opacity: 0.8; }
-.socials { display: flex; gap: 12px; font-size: 1.4rem; }
-.socials a { text-decoration: none; }
+.footer-brand h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 12px;
+  letter-spacing: -0.02em;
+}
+.footer-brand p { font-size: 0.88rem; line-height: 1.8; color: #475569; margin-bottom: 20px; }
+.socials { display: flex; gap: 10px; }
+.socials a {
+  width: 36px; height: 36px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+.socials a:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); }
 
-.footer-links h3 { color: white; font-size: 1rem; margin-bottom: 16px; }
+.footer-links h3 { color: #94a3b8; font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 16px; }
 .footer-links ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
-.footer-links ul li { font-size: 0.9rem; opacity: 0.8; }
-.footer-links a { color: #ccc; text-decoration: none; transition: color 0.2s; }
-.footer-links a:hover { color: #a78bfa; }
+.footer-links ul li { font-size: 0.88rem; color: #475569; }
+.footer-links a { color: #475569; text-decoration: none; transition: color 0.2s; }
+.footer-links a:hover { color: #818cf8; }
 
 .footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid rgba(255,255,255,0.05);
   text-align: center;
-  padding: 20px;
-  font-size: 0.85rem;
-  opacity: 0.6;
+  padding: 20px 24px;
+  font-size: 0.82rem;
+  color: #334155;
 }
 
 @media (max-width: 768px) {
