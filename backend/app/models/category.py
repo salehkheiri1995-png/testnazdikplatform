@@ -1,8 +1,5 @@
 """
 مدل Category - دسته‌بندی خدمات و محصولات.
-
-نکته مهم: یک دسته‌بندی می‌تواند فقط برای خدمات، فقط برای محصولات،
-یا برای هر دو باشد (type: service/product/both).
 """
 
 import enum
@@ -14,75 +11,42 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.models.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
-    pass  # Relations در مراحل بعد
+    from app.models.product import Product
+    from app.models.service import Service
 
 
 class CategoryType(str, enum.Enum):
-    """نوع دسته‌بندی."""
-
-    SERVICE = "service"  # فقط برای خدمات
-    PRODUCT = "product"  # فقط برای محصولات
-    BOTH = "both"  # برای هر دو
+    SERVICE = "service"
+    PRODUCT = "product"
+    BOTH = "both"
 
 
 class Category(Base, TimestampMixin):
-    """
-    جدول دسته‌بندی‌ها.
-
-    ساختار چندسطحی (parent_id برای زیردسته‌ها).
-    """
-
     __tablename__ = "categories"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-
-    # نام و slug
-    name: Mapped[str] = mapped_column(
-        String(255), nullable=False, comment="نام دسته‌بندی"
-    )
-    slug: Mapped[str] = mapped_column(
-        String(255),
-        unique=True,
-        nullable=False,
-        index=True,
-        comment="Slug برای URL",
-    )
-
-    # زیردسته (برای ساختار چندسطحی)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
     parent_id: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        ForeignKey("categories.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True,
-        comment="دسته‌بندی والد",
+        Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=True, index=True
     )
-
-    # نوع دسته‌بندی
     type: Mapped[CategoryType] = mapped_column(
-        Enum(CategoryType, native_enum=False),
-        nullable=False,
-        index=True,
-        comment="نوع دسته‌بندی (service/product/both)",
+        Enum(CategoryType, native_enum=False), nullable=False, index=True
     )
-
-    # آیکون (برای نمایش در UI)
-    icon: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, comment="نام یا URL آیکون"
-    )
+    icon: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Relations
-    # parent/children برای ساختار چندسطحی
     parent: Mapped[Optional["Category"]] = relationship(
-        "Category",
-        remote_side=[id],
-        back_populates="children",
-        foreign_keys=[parent_id],
+        "Category", remote_side=[id], back_populates="children", foreign_keys=[parent_id]
     )
     children: Mapped[list["Category"]] = relationship(
-        "Category",
-        back_populates="parent",
-        cascade="all, delete-orphan",
-        foreign_keys=[parent_id],
+        "Category", back_populates="parent", cascade="all, delete-orphan", foreign_keys=[parent_id]
+    )
+    services: Mapped[list["Service"]] = relationship(
+        "Service", back_populates="category"
+    )
+    products: Mapped[list["Product"]] = relationship(
+        "Product", back_populates="category"
     )
 
     def __repr__(self) -> str:

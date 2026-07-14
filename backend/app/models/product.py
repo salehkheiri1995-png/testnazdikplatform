@@ -1,10 +1,8 @@
 """مدل محصول (Product) برای فروشگاه‌ها."""
 
-from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from sqlalchemy import Boolean, Float, ForeignKey, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -27,80 +25,25 @@ class Product(Base, TimestampMixin):
     category_id: Mapped[int] = mapped_column(
         Integer, ForeignKey("categories.id"), nullable=False, index=True
     )
-    
-    name: Mapped[str] = mapped_column(
-        String(200), nullable=False, index=True, comment="نام محصول"
-    )
-    description: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, comment="توضیحات محصول"
-    )
-    
-    # SKU/Barcode
-    sku: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, unique=True, index=True, comment="کد محصول"
-    )
-    barcode: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, index=True, comment="بارکد"
-    )
-    
-    # قیمت
-    price: Mapped[float] = mapped_column(
-        Float, nullable=False, comment="قیمت فروش (تومان)"
-    )
-    discount_percent: Mapped[Optional[float]] = mapped_column(
-        Float, nullable=True, default=0, comment="درصد تخفیف"
-    )
-    final_price: Mapped[Optional[float]] = mapped_column(
-        Float, nullable=True, comment="قیمت نهایی با تخفیف"
-    )
-    
-    # موجودی
-    stock_quantity: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, comment="تعداد موجودی"
-    )
-    low_stock_threshold: Mapped[Optional[int]] = mapped_column(
-        Integer, default=5, nullable=True, comment="حد هشدار موجودی کم"
-    )
-    
-    # مشخصات
-    unit: Mapped[Optional[str]] = mapped_column(
-        String(50), nullable=True, comment="واحد: کیلوگرم، عدد، بسته، ..."
-    )
-    weight_grams: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, comment="وزن (گرم)"
-    )
-    
-    # تصاویر
-    images: Mapped[Optional[list[str]]] = mapped_column(
-        ARRAY(String), nullable=True, comment="تصاویر محصول"
-    )
-    
-    # ویژگی‌ها
-    attributes: Mapped[Optional[dict]] = mapped_column(
-        JSONB, nullable=True, comment="ویژگی‌های متغیر (رنگ، سایز، ...)"
-    )
-    
-    # برچسب‌ها
-    tags: Mapped[Optional[list[str]]] = mapped_column(
-        ARRAY(String), nullable=True, comment="تگ‌های جستجو"
-    )
-    
-    # وضعیت
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False, comment="فعال"
-    )
-    is_featured: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, comment="ویژه/پیشنهادی"
-    )
-    
-    # آمار
-    view_count: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, comment="تعداد بازدید"
-    )
-    sold_count: Mapped[int] = mapped_column(
-        Integer, default=0, nullable=False, comment="تعداد فروش"
-    )
-    
+    name: Mapped[str] = mapped_column(String(200), nullable=False, index=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    sku: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)
+    barcode: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
+    price: Mapped[float] = mapped_column(Float, nullable=False)
+    discount_percent: Mapped[Optional[float]] = mapped_column(Float, nullable=True, default=0)
+    final_price: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    stock_quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    low_stock_threshold: Mapped[Optional[int]] = mapped_column(Integer, default=5, nullable=True)
+    unit: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    weight_grams: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    images: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    attributes: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    tags: Mapped[Optional[Any]] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_featured: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    view_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    sold_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+
     # Relations
     store: Mapped["Store"] = relationship("Store", back_populates="products")
     category: Mapped["Category"] = relationship("Category", back_populates="products")
